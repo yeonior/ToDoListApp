@@ -32,17 +32,54 @@ class TableViewController: UITableViewController {
         present(alertController, animated: true, completion: nil)
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // запрашиваем данные
+        let context = getContext()
+        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "title", ascending: false)
+        fetchRequest.sortDescriptors = [sortDescriptor]
+        
+        // извлекаем данные
+        do {
+            tasks = try context.fetch(fetchRequest)
+        } catch let error as NSError {
+            print(error.localizedDescription)
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+//        // удаляем данные
+//        let context = getContext()
+//        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+//        if let objects = try? context.fetch(fetchRequest) {
+//            for object in objects {
+//                context.delete(object)
+//            }
+//        }
+//
+//        // сохраняем изменения
+//        do {
+//            try context.save()
+//        } catch let error as NSError {
+//            print(error.localizedDescription)
+//        }
+    }
+    
+    // для упрощения работы с Context
+    private func getContext() -> NSManagedObjectContext {
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        return appDelegate.persistentContainer.viewContext
     }
     
     // метод сохранения
     private func saveTask(withTitle title: String) {
         
         // добираемся до объекта viewContext
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        let context = appDelegate.persistentContainer.viewContext
+        let context = getContext()
         
         // добираемся до нашей сущности Task
         guard let entity = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
@@ -54,6 +91,7 @@ class TableViewController: UITableViewController {
         // пытаемся сохранить
         do {
             try context.save()
+            tasks.insert(taskObject, at: 0)
         } catch let error as NSError {
             print(error.localizedDescription)
         }
